@@ -50,3 +50,9 @@
 
 # Embedded web-server pid file
 /.web-server-pid
+
+# Secrets
+/config/secrets/dev/dev.decrypt.private.php
+/config/secrets/prod/prod.decrypt.private.php
+
+/.idea
