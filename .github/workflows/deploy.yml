@@ -77,7 +77,6 @@ jobs:
                     docker load -i ~/cooky-api.tar
                     docker stop ${CONTAINER_NAME} 2>/dev/null || true
                     docker rm ${CONTAINER_NAME} 2>/dev/null || true
-                    docker rmi cooky-api:latest 2>/dev/null || true
                     
                     docker run -d \
                       --name ${CONTAINER_NAME} \
