@@ -3,37 +3,33 @@ name: Deploy to VPS
 on:
     push:
         branches:
-            - dev
-            - master
+            - main
+            - develop
 
 jobs:
-    deploy:
+    build-and-deploy:
         runs-on: ubuntu-latest
-        environment:
-            name: ${{ github.ref == 'refs/heads/master' && 'prod' || 'staging' }}
-
+        environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
         steps:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
-            -   name: Determine environment
+            -   name: Set environment
                 id: env
                 run: |
-                    if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+                    if [ "${{ github.ref }}" = "refs/heads/main" ]; then
                       echo "ENV=prod" >> $GITHUB_OUTPUT
                     else
                       echo "ENV=staging" >> $GITHUB_OUTPUT
                     fi
 
-            -   name: Set up Docker Buildx
-                uses: docker/setup-buildx-action@v3
-
             -   name: Build Docker image
                 run: |
-                    docker buildx build --load -f docker/Dockerfile -t cooky-api:latest .
+                    docker build -t cooky-api:latest .
 
             -   name: Save Docker image
                 run: |
+                    mkdir -p /tmp
                     docker save cooky-api:latest -o /tmp/cooky-api.tar
 
             -   name: Deploy to VPS
@@ -56,6 +52,9 @@ jobs:
                     
                     DEPLOY_PATH="/var/www/${SERVER_DEPLOY_PATH}/cooky-api"
                     
+                    echo "DEBUG LOCAL: ENVIRONMENT=$ENVIRONMENT"
+                    echo "DEBUG LOCAL: DEPLOY_PATH=$DEPLOY_PATH"
+                    
                     scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
                     
                     ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
@@ -64,22 +63,29 @@ jobs:
                       bash -s << 'EOF'
                     set -e
                     
+                    echo "DEBUG REMOTE: ENVIRONMENT=$ENVIRONMENT"
+                    echo "DEBUG REMOTE: DEPLOY_PATH=$DEPLOY_PATH"
+                    
                     CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
+                    NETWORK_NAME="cooky-network"
+                    
+                    echo "DEBUG REMOTE: CONTAINER_NAME=$CONTAINER_NAME"
+                    
+                    # Créer le network s'il n'existe pas
+                    docker network create ${NETWORK_NAME} 2>/dev/null || true
                     
                     # Arrêter et supprimer l'ancien conteneur
                     docker stop ${CONTAINER_NAME} 2>/dev/null || true
-                    docker rm ${CONTAINER_NAME} 2>/dev/null || true
-                    
-                    # Attendre un peu pour que le port se libère
-                    sleep 2
+                    docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
                     
                     docker load -i ~/cooky-api.tar
                     
                     docker run -d \
                       --name ${CONTAINER_NAME} \
+                      --network ${NETWORK_NAME} \
                       --restart unless-stopped \
                       -v ${DEPLOY_PATH}:/app \
-                      -p 9000:9000 \
+                      -p 127.0.0.1:9000:9000 \
                       cooky-api:latest
                     
                     rm -f ~/cooky-api.tar
