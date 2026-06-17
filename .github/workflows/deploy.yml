@@ -28,7 +28,7 @@ jobs:
 
             -   name: Build Docker image
                 run: |
-                    docker buildx build --load -t cooky-api:latest .
+                    docker buildx build --load -f docker/Dockerfile -t cooky-api:latest .
 
             -   name: Save Docker image
                 run: |
