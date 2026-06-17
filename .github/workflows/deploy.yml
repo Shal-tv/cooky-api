@@ -57,50 +57,34 @@ jobs:
                     DEPLOY_PATH="/var/www/${SERVER_DEPLOY_PATH}/cooky-api"
                     
                     echo "DEBUG LOCAL: ENVIRONMENT=$ENVIRONMENT"
-                    echo "DEBUG LOCAL: SERVER_DEPLOY_PATH=$SERVER_DEPLOY_PATH"
                     echo "DEBUG LOCAL: DEPLOY_PATH=$DEPLOY_PATH"
                     
-                    # Créer le script de déploiement localement
-                    cat > /tmp/deploy.sh << 'DEPLOY_SCRIPT'
-                    #!/bin/bash
+                    scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
+                    
+                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
                     set -e
                     
-                    DEPLOY_PATH="$1"
-                    ENVIRONMENT="$2"
+                    CONTAINER_NAME="cooky-api-\${ENVIRONMENT}"
                     
-                    echo "DEBUG REMOTE: DEPLOY_PATH=$DEPLOY_PATH"
-                    echo "DEBUG REMOTE: ENVIRONMENT=$ENVIRONMENT"
-                    
-                    CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
-                    
-                    echo "DEBUG REMOTE: CONTAINER_NAME=$CONTAINER_NAME"
-                    
-                    mv ~/.env.${ENVIRONMENT} ${DEPLOY_PATH}/.env
+                    echo "DEBUG REMOTE: CONTAINER_NAME=\${CONTAINER_NAME}"
                     
                     docker load -i ~/cooky-api.tar
-                    docker stop ${CONTAINER_NAME} 2>/dev/null || true
-                    docker rm ${CONTAINER_NAME} 2>/dev/null || true
+                    docker stop \${CONTAINER_NAME} 2>/dev/null || true
+                    docker rm \${CONTAINER_NAME} 2>/dev/null || true
                     docker rmi cooky-api:latest 2>/dev/null || true
                     
                     docker run -d \
-                    --name ${CONTAINER_NAME} \
-                    --restart unless-stopped \
-                    -v ${DEPLOY_PATH}:/app \
-                    -p 9000:9000 \
-                    --env-file ${DEPLOY_PATH}/.env \
-                    cooky-api:latest
+                      --name \${CONTAINER_NAME} \
+                      --restart unless-stopped \
+                      -v ${DEPLOY_PATH}:/app \
+                      -p 9000:9000 \
+                      cooky-api:latest
                     
                     rm -f ~/cooky-api.tar
                     
-                    echo "✅ Deployed to ${ENVIRONMENT}"
-                    DEPLOY_SCRIPT
-                    
-                    scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
-                    scp -P $SSH_PORT -o StrictHostKeyChecking=no .env.${ENVIRONMENT} $SSH_USER@$SSH_HOST:~/.env.${ENVIRONMENT}
-                    scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/deploy.sh $SSH_USER@$SSH_HOST:~/deploy.sh
-                    
-                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "bash ~/deploy.sh '$DEPLOY_PATH' '$ENVIRONMENT'"
+                    echo "✅ Deployed to \${ENVIRONMENT}"
+                    EOF
 
             -   name: Cleanup
                 if: always()
-                run: rm -f /tmp/cooky-api.tar /tmp/deploy.sh
+                run: rm -f /tmp/cooky-api.tar

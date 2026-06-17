@@ -64,3 +64,4 @@ phpstan.neon
 /config/routes/web_profiler.yaml
 /config/packages/web_profiler.yaml
 /config/packages/twig.yaml
+/.env.local
