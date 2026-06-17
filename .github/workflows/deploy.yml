@@ -9,6 +9,8 @@ on:
 jobs:
     deploy:
         runs-on: ubuntu-latest
+        environment:
+            name: ${{ github.ref == 'refs/heads/master' && 'prod' || 'staging' }}
 
         steps:
             -   name: Checkout code
@@ -54,9 +56,6 @@ jobs:
                     
                     DEPLOY_PATH="/var/www/${SERVER_DEPLOY_PATH}/cooky-api"
                     
-                    echo "DEBUG LOCAL: ENVIRONMENT=$ENVIRONMENT"
-                    echo "DEBUG LOCAL: DEPLOY_PATH=$DEPLOY_PATH"
-                    
                     scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
                     
                     ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
@@ -64,9 +63,6 @@ jobs:
                       ENVIRONMENT="$ENVIRONMENT" \
                       bash -s << 'EOF'
                     set -e
-                    
-                    echo "DEBUG REMOTE: DEPLOY_PATH=$DEPLOY_PATH"
-                    echo "DEBUG REMOTE: ENVIRONMENT=$ENVIRONMENT"
                     
                     CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
                     
