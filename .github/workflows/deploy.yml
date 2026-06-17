@@ -61,20 +61,26 @@ jobs:
                     
                     scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
                     
-                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
+                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
+                      ENVIRONMENT="$ENVIRONMENT" \
+                      DEPLOY_PATH="$DEPLOY_PATH" \
+                      bash -s << 'EOF'
                     set -e
                     
-                    CONTAINER_NAME="cooky-api-\${ENVIRONMENT}"
+                    echo "DEBUG REMOTE: ENVIRONMENT=$ENVIRONMENT"
+                    echo "DEBUG REMOTE: DEPLOY_PATH=$DEPLOY_PATH"
                     
-                    echo "DEBUG REMOTE: CONTAINER_NAME=\${CONTAINER_NAME}"
+                    CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
+                    
+                    echo "DEBUG REMOTE: CONTAINER_NAME=$CONTAINER_NAME"
                     
                     docker load -i ~/cooky-api.tar
-                    docker stop \${CONTAINER_NAME} 2>/dev/null || true
-                    docker rm \${CONTAINER_NAME} 2>/dev/null || true
+                    docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                    docker rm ${CONTAINER_NAME} 2>/dev/null || true
                     docker rmi cooky-api:latest 2>/dev/null || true
                     
                     docker run -d \
-                      --name \${CONTAINER_NAME} \
+                      --name ${CONTAINER_NAME} \
                       --restart unless-stopped \
                       -v ${DEPLOY_PATH}:/app \
                       -p 9000:9000 \
@@ -82,7 +88,7 @@ jobs:
                     
                     rm -f ~/cooky-api.tar
                     
-                    echo "✅ Deployed to \${ENVIRONMENT}"
+                    echo "✅ Deployed to ${ENVIRONMENT}"
                     EOF
 
             -   name: Cleanup
