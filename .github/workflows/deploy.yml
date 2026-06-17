@@ -56,7 +56,11 @@ jobs:
                     
                     DEPLOY_PATH="/var/www/${SERVER_DEPLOY_PATH}/cooky-api"
                     
+                    echo "DEBUG LOCAL: ENVIRONMENT=$ENVIRONMENT"
+                    echo "DEBUG LOCAL: DEPLOY_PATH=$DEPLOY_PATH"
+                    
                     scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
+                    scp -P $SSH_PORT -o StrictHostKeyChecking=no .env.${ENVIRONMENT} $SSH_USER@$SSH_HOST:~/.env.${ENVIRONMENT}
                     
                     ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
                       DEPLOY_PATH="$DEPLOY_PATH" \
@@ -64,7 +68,15 @@ jobs:
                       bash -s << 'EOF'
                     set -e
                     
+                    echo "DEBUG REMOTE: DEPLOY_PATH=$DEPLOY_PATH"
+                    echo "DEBUG REMOTE: ENVIRONMENT=$ENVIRONMENT"
+                    
                     CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
+                    
+                    echo "DEBUG REMOTE: CONTAINER_NAME=$CONTAINER_NAME"
+                    
+                    mkdir -p ${DEPLOY_PATH}
+                    mv ~/.env.${ENVIRONMENT} ${DEPLOY_PATH}/.env
                     
                     docker load -i ~/cooky-api.tar
                     docker stop ${CONTAINER_NAME} 2>/dev/null || true
