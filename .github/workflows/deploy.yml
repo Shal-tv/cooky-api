@@ -3,13 +3,13 @@ name: Deploy to VPS
 on:
     push:
         branches:
-            - main
-            - develop
+            - dev
+            - master
 
 jobs:
     build-and-deploy:
         runs-on: ubuntu-latest
-        environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+        environment: ${{ github.ref == 'refs/heads/master' && 'prod' || 'staging' }}
         steps:
             -   name: Checkout code
                 uses: actions/checkout@v4
@@ -17,7 +17,7 @@ jobs:
             -   name: Set environment
                 id: env
                 run: |
-                    if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+                    if [ "${{ github.ref }}" = "refs/heads/master" ]; then
                       echo "ENV=prod" >> $GITHUB_OUTPUT
                     else
                       echo "ENV=staging" >> $GITHUB_OUTPUT
