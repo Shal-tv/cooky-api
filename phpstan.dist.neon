@@ -1,0 +1,10 @@
+parameters:
+    level: 10
+    excludePaths:
+    	- config/reference.php
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/

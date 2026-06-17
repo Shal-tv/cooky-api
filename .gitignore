@@ -56,3 +56,11 @@
 /config/secrets/prod/prod.decrypt.private.php
 
 /.idea
+/config/reference.php
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
+/templates/base.html.twig
+/config/routes/web_profiler.yaml
+/config/packages/web_profiler.yaml
+/config/packages/twig.yaml

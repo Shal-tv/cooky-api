@@ -1,0 +1,16 @@
+services:
+    api:
+        image: ${PHP_IMAGE}
+        container_name: ${COMPOSE_PROJECT_NAME}-php
+        restart: unless-stopped
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        ports:
+            - "127.0.0.1:${PHP_FPM_PORT}:9000"
+        networks:
+            - cooky-api
+
+networks:
+    cooky-api:
+        name: ${COMPOSE_PROJECT_NAME}
+        driver: bridge

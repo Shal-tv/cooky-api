@@ -1,0 +1,39 @@
+framework:
+    messenger:
+        default_bus: default.bus
+
+        buses:
+            default.bus: ~
+            command.bus: ~
+            query.bus: ~
+            event.bus: ~
+
+when@dev:
+    framework:
+        messenger:
+            transports:
+                async:
+                    dsn: amqp://%env(RMQ_USER_DEV)%:%env(RMQ_PASSWORD_DEV)%@%env(RMQ_HOST_DEV)%:%env(RMQ_PORT_DEV)%/%2f/cooky_dev
+                    failure_transport: async_failed
+
+                async_failed: amqp://%env(RMQ_USER_DEV)%:%env(RMQ_PASSWORD_DEV)%@%env(RMQ_HOST_DEV)%:%env(RMQ_PORT_DEV)%/%2f/cooky_failed_dev
+
+when@staging:
+    framework:
+        messenger:
+            transports:
+                async:
+                    dsn: amqp://%env(RMQ_USER_STAGING)%:%env(RMQ_PASSWORD_STAGING)%@%env(RMQ_HOST_STAGING)%:%env(RMQ_PORT_STAGING)%/%2f/cooky_dev
+                    failure_transport: async_failed
+
+                async_failed: amqp://%env(RMQ_USER_STAGING)%:%env(RMQ_PASSWORD_STAGING)%@%env(RMQ_HOST_STAGING)%:%env(RMQ_PORT_STAGING)%/%2f/cooky_failed_dev
+
+when@prod:
+    framework:
+        messenger:
+            transports:
+                async:
+                    dsn: amqp://%env(RMQ_USER_PROD)%:%env(RMQ_PASSWORD_PROD)%@%env(RMQ_HOST_PROD)%:%env(RMQ_PORT_PROD)%/%2f/cooky_dev
+                    failure_transport: async_failed
+
+                async_failed: amqp://%env(RMQ_USER_PROD)%:%env(RMQ_PASSWORD_PROD)%@%env(RMQ_HOST_PROD)%:%env(RMQ_PORT_PROD)%/%2f/cooky_failed_dev

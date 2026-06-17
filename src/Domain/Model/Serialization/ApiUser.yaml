@@ -1,0 +1,10 @@
+App\Domain\Model\ApiUser:
+    attributes:
+        uuid:
+            groups: [ 'read', 'write' ]
+
+        username:
+            groups: [ 'read' ]
+
+        email:
+            groups: [ 'read' ]

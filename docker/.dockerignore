@@ -1,0 +1,9 @@
+.git
+.gitignore
+.github
+
+.idea
+.vscode
+
+var/cache/*
+var/log/*

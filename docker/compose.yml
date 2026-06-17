@@ -1,0 +1,66 @@
+services:
+    api:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        container_name: cooky-api
+        working_dir: /var/www/dev/cooky-api
+        environment:
+            APP_DIR: /var/www/dev/cooky-api
+            DB_HOST: db
+            DB_PORT: 5432
+        volumes:
+            - ../:/var/www/dev/cooky-api
+            - vendor:/var/www/dev/cooky-api/vendor
+            - var-cache:/var/www/dev/cooky-api/var/cache
+            - var-log:/var/www/dev/cooky-api/var/log
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        depends_on:
+            db:
+                condition: service_healthy
+        networks:
+            - cooky_network
+
+    nginx:
+        image: nginx:alpine
+        container_name: cooky_nginx
+        ports:
+            - "8080:80"
+        volumes:
+            - ../:/var/www/dev/cooky-api:ro
+            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+        depends_on:
+            - api
+        networks:
+            - cooky_network
+
+    db:
+        image: postgres:17-alpine
+        container_name: cooky-db
+        environment:
+            POSTGRES_DB: cooky_dev
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U cooky_dev_rw -d cooky_dev" ]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+        ports:
+            - "5432:5432"
+        volumes:
+            - cooky-api-postgres-data:/var/lib/postgresql/data
+            - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+        networks:
+            - cooky_network
+
+volumes:
+    cooky-api-postgres-data:
+    vendor:
+    var-cache:
+    var-log:
+
+networks:
+    cooky_network:
+        driver: bridge

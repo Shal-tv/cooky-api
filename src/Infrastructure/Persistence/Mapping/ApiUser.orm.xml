@@ -1,0 +1,17 @@
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="App\Domain\Model\ApiUser" table="api_user"
+            repository-class="App\Infrastructure\Persistence\Repository\ApiUserRepository">
+        <field name="username" type="string" nullable="false"/>
+        <field name="email" type="string" nullable="false"/>
+        <field name="password" type="string" nullable="false"/>
+        <field name="roles" type="json" nullable="false"/>
+
+        <lifecycle-callbacks>
+            <!-- Add lifecycle callbacks if any are needed -->
+        </lifecycle-callbacks>
+    </entity>
+</doctrine-mapping>
