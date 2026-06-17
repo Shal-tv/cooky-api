@@ -61,32 +61,30 @@ jobs:
                     
                     scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
                     
-                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
-                    DEPLOY_PATH="$DEPLOY_PATH"
-                    ENVIRONMENT="$ENVIRONMENT"
-                    
+                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
+                      DEPLOY_PATH="$DEPLOY_PATH" \
+                      ENVIRONMENT="$ENVIRONMENT" \
+                      bash -s << 'EOF'
                     set -e
-                    CONTAINER_NAME="cooky-api-\$ENVIRONMENT"
+                    
+                    CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
                     
                     docker load -i ~/cooky-api.tar
-                    docker stop \$CONTAINER_NAME 2>/dev/null || true
-                    docker rm \$CONTAINER_NAME 2>/dev/null || true
+                    docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                    docker rm ${CONTAINER_NAME} 2>/dev/null || true
                     docker rmi cooky-api:latest 2>/dev/null || true
                     
-                    echo "DEBUG: DEPLOY_PATH=\$DEPLOY_PATH"
-                    echo "DEBUG: ENVIRONMENT=\$ENVIRONMENT"
-                    
                     docker run -d \
-                      --name \$CONTAINER_NAME \
+                      --name ${CONTAINER_NAME} \
                       --restart unless-stopped \
-                      -v \$DEPLOY_PATH:/app \
+                      -v ${DEPLOY_PATH}:/app \
                       -p 9000:9000 \
-                      --env-file \$DEPLOY_PATH/.env \
+                      --env-file ${DEPLOY_PATH}/.env \
                       cooky-api:latest
                     
                     rm -f ~/cooky-api.tar
                     
-                    echo "✅ Deployed to \$ENVIRONMENT"
+                    echo "✅ Deployed to ${ENVIRONMENT}"
                     EOF
 
             -   name: Cleanup
