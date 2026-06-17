@@ -3,33 +3,37 @@ name: Deploy to VPS
 on:
     push:
         branches:
-            - master
             - dev
+            - master
 
 jobs:
-    build-and-deploy:
+    deploy:
         runs-on: ubuntu-latest
-        environment: ${{ github.ref == 'refs/heads/master' && 'prod' || 'staging' }}
+        environment:
+            name: ${{ github.ref == 'refs/heads/master' && 'prod' || 'staging' }}
+
         steps:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
-            -   name: Set environment
+            -   name: Determine environment
                 id: env
                 run: |
-                    if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+                    if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
                       echo "ENV=prod" >> $GITHUB_OUTPUT
                     else
                       echo "ENV=staging" >> $GITHUB_OUTPUT
                     fi
 
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
             -   name: Build Docker image
                 run: |
-                    docker build -t cooky-api:latest .
+                    docker buildx build --load -f docker/Dockerfile -t cooky-api:latest .
 
             -   name: Save Docker image
                 run: |
-                    mkdir -p /tmp
                     docker save cooky-api:latest -o /tmp/cooky-api.tar
 
             -   name: Deploy to VPS
@@ -74,11 +78,9 @@ jobs:
                     # Créer le network s'il n'existe pas
                     docker network create ${NETWORK_NAME} 2>/dev/null || true
                     
-                    # Arrêter et supprimer l'ancien conteneur
+                    docker load -i ~/cooky-api.tar
                     docker stop ${CONTAINER_NAME} 2>/dev/null || true
                     docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
-                    
-                    docker load -i ~/cooky-api.tar
                     
                     docker run -d \
                       --name ${CONTAINER_NAME} \
