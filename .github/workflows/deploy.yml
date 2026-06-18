@@ -50,7 +50,6 @@ jobs:
                     SSH_USER: ${{ secrets.SERVER_USER }}
                     SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
                     SSH_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
-                    SSH_PASSPHRASE: ${{ secrets.SERVER_SSH_PASSPHRASE }}
                     ENVIRONMENT: ${{ steps.env.outputs.ENV }}
                 run: |
                     mkdir -p ~/.ssh
@@ -60,32 +59,29 @@ jobs:
                     eval $(ssh-agent -s)
                     ssh-add ~/.ssh/id_rsa
                     
-                    ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+                    ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
                     
-                    scp -P $SSH_PORT -o StrictHostKeyChecking=no \
+                    scp -P $SSH_PORT \
                       /tmp/cooky-api.tar \
                       /tmp/cooky-nginx.tar \
                       docker/compose.staging.yml \
                       $SSH_USER@$SSH_HOST:/tmp/
                     
-                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
+                    ssh -p $SSH_PORT $SSH_USER@$SSH_HOST \
                       ENVIRONMENT="$ENVIRONMENT" \
                       bash -s << 'EOF'
                     
                     set -e
-                    
-                    CONTAINER_API="cooky-api-staging"
-                    CONTAINER_NGINX="cooky-nginx-staging"
                     
                     docker load -i /tmp/cooky-api.tar
                     docker load -i /tmp/cooky-nginx.tar
                     
                     docker compose -f /tmp/compose.staging.yml up -d --force-recreate
                     
-                    docker exec $CONTAINER_API php bin/console cache:clear --env=prod || true
-                    docker exec $CONTAINER_API php bin/console cache:warmup --env=prod || true
+                    docker exec cooky-api-staging php bin/console cache:clear --env=prod || true
+                    docker exec cooky-api-staging php bin/console cache:warmup --env=prod || true
                     
-                    rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/compose.staging.yml
+                    rm -f /tmp/*.tar /tmp/compose.staging.yml
                     
                     EOF
 
