@@ -16,24 +16,21 @@ RUN apt-get update && apt-get install -y \
     pdo_pgsql \
     zip
 
-# AMQP extension (IMPORTANT)
 RUN pecl install amqp \
  && docker-php-ext-enable amqp
 
-# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
+COPY . .
 
 RUN composer install \
     --no-dev \
     --prefer-dist \
     --no-interaction \
-    --optimize-autoloader
-
-COPY . .
+    --optimize-autoloader \
+    --no-scripts
 
 RUN mkdir -p var/cache var/log && \
     chown -R www-data:www-data var public
