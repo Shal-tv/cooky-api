@@ -4,7 +4,7 @@ declare(strict_types = 1);
 
 namespace App\Domain\Model;
 
-final class ApiUser extends AbstractEntity
+class ApiUser extends AbstractEntity
 {
     private string $username;
 
