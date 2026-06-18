@@ -1,39 +1,46 @@
 FROM php:8.4-fpm
 
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
-
+# Dépendances système
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    libpq-dev \
-    libzip-dev \
+    zip \
+    curl \
     libicu-dev \
-    libonig-dev \
-    librabbitmq-dev \
-    && pecl install amqp \
-    && docker-php-ext-enable amqp \
-    && docker-php-ext-install \
-        pdo_pgsql \
-        zip \
-        intl \
-        mbstring \
-        opcache \
-    && rm -rf /var/lib/apt/lists/*
+    libzip-dev \
+    libpq-dev \
+ && docker-php-ext-install \
+    intl \
+    pdo \
+    pdo_pgsql \
+    zip
+
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# Copie d'abord uniquement dépendances PHP
 COPY composer.json composer.lock ./
 
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
+# Install dépendances (optimisé cache Docker)
+RUN composer install \
     --no-dev \
+    --prefer-dist \
     --no-interaction \
-    --optimize-autoloader \
-    --no-scripts
+    --optimize-autoloader
 
+# Puis copie du code complet
 COPY . .
 
-RUN chown -R www-data:www-data /var/www/html
+# Permissions Symfony
+RUN mkdir -p var/cache var/log && \
+    chown -R www-data:www-data var public
 
-USER www-data
+# Symfony optimisations (important en prod)
+RUN php bin/console cache:clear --env=prod || true && \
+    php bin/console cache:warmup --env=prod || true
+
+EXPOSE 9000
 
 CMD ["php-fpm", "-F"]

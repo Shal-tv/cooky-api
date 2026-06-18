@@ -1,21 +1,26 @@
 services:
-
     api:
         image: cooky-api:latest
-
         container_name: cooky-api-staging
-
         restart: unless-stopped
+        environment:
+            APP_ENV: prod
+        networks:
+            - app
+        expose:
+            - "9000"
 
     nginx:
         image: cooky-nginx:latest
-
         container_name: cooky-nginx-staging
-
         restart: unless-stopped
-
         depends_on:
             - api
-
         ports:
             - "127.0.0.1:8080:80"
+        networks:
+            - app
+
+networks:
+    app:
+        driver: bridge
