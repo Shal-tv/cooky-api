@@ -1,6 +1,5 @@
 FROM php:8.4-fpm
 
-# Dépendances système
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -9,37 +8,35 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     libzip-dev \
     libpq-dev \
+    librabbitmq-dev \
+    libssl-dev \
  && docker-php-ext-install \
     intl \
     pdo \
     pdo_pgsql \
     zip
 
+# AMQP extension (IMPORTANT)
+RUN pecl install amqp \
+ && docker-php-ext-enable amqp
+
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copie d'abord uniquement dépendances PHP
 COPY composer.json composer.lock ./
 
-# Install dépendances (optimisé cache Docker)
 RUN composer install \
     --no-dev \
     --prefer-dist \
     --no-interaction \
     --optimize-autoloader
 
-# Puis copie du code complet
 COPY . .
 
-# Permissions Symfony
 RUN mkdir -p var/cache var/log && \
     chown -R www-data:www-data var public
-
-# Symfony optimisations (important en prod)
-RUN php bin/console cache:clear --env=prod || true && \
-    php bin/console cache:warmup --env=prod || true
 
 EXPOSE 9000
 
