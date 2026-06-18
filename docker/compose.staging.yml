@@ -5,9 +5,6 @@ services:
         restart: unless-stopped
         environment:
             APP_ENV: prod
-        volumes:
-            - .:/var/www/html
-            - /var/www/html/var
         networks:
             - app
         expose:
