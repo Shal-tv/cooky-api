@@ -73,19 +73,16 @@ jobs:
                     
                     docker compose -f /tmp/compose.staging.yml up -d
                     
-                    docker exec -u root ${CONTAINER_NAME} sh -c "git config --global --add safe.directory /var/www/html || true"
-                    
-                    docker exec -u root ${CONTAINER_NAME} sh -c "chown -R www-data:www-data /var/www/html"
-                    docker exec -u root ${CONTAINER_NAME} sh -c "chown -R www-data:www-data /var/www/.composer || true"
-                    
-                    docker exec -u www-data ${CONTAINER_NAME} composer clear-cache
+                    # HARD FIX: vendor clean reinstall
+                    docker exec -u root ${CONTAINER_NAME} rm -rf /var/www/html/vendor
                     
                     docker exec -u www-data ${CONTAINER_NAME} composer install \
                       --no-interaction \
                       --no-dev \
-                      --optimize-autoloader
+                      --optimize-autoloader \
+                      --no-scripts
                     
-                    docker exec ${CONTAINER_NAME} php bin/console cache:clear --env=prod || true
+                    docker exec ${CONTAINER_NAME} php bin/console cache:clear --no-warmup --env=prod || true
                     docker exec ${CONTAINER_NAME} php bin/console cache:warmup --env=prod || true
                     
                     rm -f /tmp/cooky-api.tar /tmp/compose.staging.yml
