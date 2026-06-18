@@ -31,22 +31,19 @@ jobs:
                 uses: docker/setup-buildx-action@v3
 
             # =========================
-            # BUILD PHP IMAGE
+            # BUILD IMAGES (IMPORTANT: TAG FIXE)
             # =========================
             -   name: Build PHP image
                 run: |
                     docker build \
                       -f docker/php/Dockerfile \
-                      -t cooky-api:${{ steps.env.outputs.ENV }} .
+                      -t cooky-api:latest .
 
-            # =========================
-            # BUILD NGINX IMAGE
-            # =========================
             -   name: Build Nginx image
                 run: |
                     docker build \
                       -f docker/nginx/Dockerfile \
-                      -t cooky-nginx:${{ steps.env.outputs.ENV }} .
+                      -t cooky-nginx:latest .
 
             # =========================
             # SAVE IMAGES
@@ -55,8 +52,8 @@ jobs:
                 run: |
                     mkdir -p /tmp
                     
-                    docker save cooky-api:${{ steps.env.outputs.ENV }} -o /tmp/cooky-api.tar
-                    docker save cooky-nginx:${{ steps.env.outputs.ENV }} -o /tmp/cooky-nginx.tar
+                    docker save cooky-api:latest -o /tmp/cooky-api.tar
+                    docker save cooky-nginx:latest -o /tmp/cooky-nginx.tar
 
             # =========================
             # DEPLOY TO VPS
@@ -70,6 +67,7 @@ jobs:
                     SSH_PASSPHRASE: ${{ secrets.SERVER_SSH_PASSPHRASE }}
                 run: |
                     mkdir -p ~/.ssh
+                    
                     echo "$SSH_KEY" > ~/.ssh/id_rsa
                     chmod 600 ~/.ssh/id_rsa
                     
@@ -78,7 +76,7 @@ jobs:
                     
                     ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
                     
-                    # upload images + compose
+                    # Upload images + compose
                     scp -P $SSH_PORT \
                       /tmp/cooky-api.tar \
                       /tmp/cooky-nginx.tar \
@@ -86,14 +84,14 @@ jobs:
                       $SSH_USER@$SSH_HOST:/tmp/
                     
                     ssh -p $SSH_PORT $SSH_USER@$SSH_HOST << 'EOF'
-                    set -e
+                      set -e
                     
-                    docker load -i /tmp/cooky-api.tar
-                    docker load -i /tmp/cooky-nginx.tar
+                      docker load -i /tmp/cooky-api.tar
+                      docker load -i /tmp/cooky-nginx.tar
                     
-                    docker network create cooky-network 2>/dev/null || true
+                      docker network create cooky-network 2>/dev/null || true
                     
-                    docker compose -f /tmp/compose.staging.yml up -d
+                      docker compose -f /tmp/compose.staging.yml up -d
                     
-                    rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/compose.staging.yml
+                      rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/compose.staging.yml
                     EOF
