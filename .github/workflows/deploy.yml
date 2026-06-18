@@ -107,6 +107,9 @@ jobs:
                     # =========================
                     docker compose -f /tmp/compose.staging.yml up -d
                     
+                    docker exec ${CONTAINER_NAME} php bin/console cache:clear --env=prod || true
+                    docker exec ${CONTAINER_NAME} php bin/console cache:warmup --env=prod || true
+                    
                     rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/compose.staging.yml
                     EOF
 
