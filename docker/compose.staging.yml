@@ -1,0 +1,21 @@
+services:
+
+    api:
+        image: cooky-api:latest
+
+        container_name: cooky-api-staging
+
+        restart: unless-stopped
+
+    nginx:
+        image: cooky-nginx:latest
+
+        container_name: cooky-nginx-staging
+
+        restart: unless-stopped
+
+        depends_on:
+            - api
+
+        ports:
+            - "127.0.0.1:8080:80"

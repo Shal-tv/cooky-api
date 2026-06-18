@@ -2,7 +2,7 @@ services:
     api:
         build:
             context: .
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
         container_name: cooky-api
         working_dir: /var/www/dev/cooky-api
         environment:

@@ -9,10 +9,12 @@ on:
 jobs:
     deploy:
         runs-on: ubuntu-latest
+
         environment:
             name: ${{ github.ref == 'refs/heads/master' && 'prod' || 'staging' }}
 
         steps:
+
             -   name: Checkout code
                 uses: actions/checkout@v4
 
@@ -28,14 +30,37 @@ jobs:
             -   name: Set up Docker Buildx
                 uses: docker/setup-buildx-action@v3
 
-            -   name: Build Docker image
-                run: docker buildx build --load -f docker/Dockerfile -t cooky-api:latest .
+            # =========================
+            # BUILD PHP IMAGE
+            # =========================
+            -   name: Build PHP image
+                run: |
+                    docker build \
+                      -f docker/php/Dockerfile \
+                      -t cooky-api:${{ steps.env.outputs.ENV }} .
 
-            -   name: Save Docker image
+            # =========================
+            # BUILD NGINX IMAGE
+            # =========================
+            -   name: Build Nginx image
+                run: |
+                    docker build \
+                      -f docker/nginx/Dockerfile \
+                      -t cooky-nginx:${{ steps.env.outputs.ENV }} .
+
+            # =========================
+            # SAVE IMAGES
+            # =========================
+            -   name: Save Docker images
                 run: |
                     mkdir -p /tmp
-                    docker save cooky-api:latest -o /tmp/cooky-api.tar
+                    
+                    docker save cooky-api:${{ steps.env.outputs.ENV }} -o /tmp/cooky-api.tar
+                    docker save cooky-nginx:${{ steps.env.outputs.ENV }} -o /tmp/cooky-nginx.tar
 
+            # =========================
+            # DEPLOY TO VPS
+            # =========================
             -   name: Deploy to VPS
                 env:
                     SSH_HOST: ${{ secrets.SERVER_HOST }}
@@ -43,8 +68,6 @@ jobs:
                     SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
                     SSH_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
                     SSH_PASSPHRASE: ${{ secrets.SERVER_SSH_PASSPHRASE }}
-                    SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
-                    ENVIRONMENT: ${{ steps.env.outputs.ENV }}
                 run: |
                     mkdir -p ~/.ssh
                     echo "$SSH_KEY" > ~/.ssh/id_rsa
@@ -52,38 +75,33 @@ jobs:
                     
                     eval $(ssh-agent -s)
                     echo "$SSH_PASSPHRASE" | ssh-add ~/.ssh/id_rsa
+                    
                     ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
                     
-                    DEPLOY_PATH="/var/www/${SERVER_DEPLOY_PATH}/cooky-api"
+                    # upload images + compose
+                    scp -P $SSH_PORT \
+                      /tmp/cooky-api.tar \
+                      /tmp/cooky-nginx.tar \
+                      docker/compose.staging.yml \
+                      $SSH_USER@$SSH_HOST:/tmp/
                     
-                    scp -P $SSH_PORT -o StrictHostKeyChecking=no /tmp/cooky-api.tar $SSH_USER@$SSH_HOST:~/cooky-api.tar
+                    ssh -p $SSH_PORT $SSH_USER@$SSH_HOST << 'EOF'
+                      set -e
                     
-                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
-                      ENVIRONMENT="$ENVIRONMENT" \
-                      DEPLOY_PATH="$DEPLOY_PATH" \
-                      bash -s << 'EOF'
-                    set -e
+                      ENVIRONMENT="staging"
+                      NETWORK="cooky-network"
                     
-                    CONTAINER_NAME="cooky-api-${ENVIRONMENT}"
-                    NETWORK_NAME="cooky-network"
+                      docker network create $NETWORK 2>/dev/null || true
                     
-                    docker network create ${NETWORK_NAME} 2>/dev/null || true
+                      docker load -i /tmp/cooky-api.tar
+                      docker load -i /tmp/cooky-nginx.tar
                     
-                    docker load -i ~/cooky-api.tar
-                    docker stop ${CONTAINER_NAME} 2>/dev/null || true
-                    docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
+                      mkdir -p /opt/cooky-api
+                      mv /tmp/compose.staging.yml /opt/cooky-api/compose.yml
                     
-                    docker run -d \
-                      --name ${CONTAINER_NAME} \
-                      --network ${NETWORK_NAME} \
-                      --restart unless-stopped \
-                      -v ${DEPLOY_PATH}:/app \
-                      -p 127.0.0.1:9000:9000 \
-                      cooky-api:latest
+                      cd /opt/cooky-api
                     
-                    rm -f ~/cooky-api.tar
+                      docker compose -f compose.yml up -d
+                    
+                      rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar
                     EOF
-
-            -   name: Cleanup
-                if: always()
-                run: rm -f /tmp/cooky-api.tar

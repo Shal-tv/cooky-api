@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     libonig-dev \
     librabbitmq-dev \
+    netcat-openbsd \
     && docker-php-ext-install \
     pdo_pgsql \
     zip \
@@ -20,27 +21,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /var/www/html
+COPY php/opcache-dev.ini /usr/local/etc/php/conf.d/opcache-dev.ini
+COPY php/dev-entrypoint.sh /usr/local/bin/dev-entrypoint
 
-COPY composer.json composer.lock ./
+RUN chmod +x /usr/local/bin/dev-entrypoint
 
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --no-interaction \
-    --prefer-dist
+WORKDIR /var/www/dev/cooky-api
 
-COPY . .
-
-RUN composer dump-autoload \
-    --optimize \
-    --classmap-authoritative
-
-RUN mkdir -p var/cache var/log \
-    && chown -R www-data:www-data var \
-    && chmod -R u+rwX,g+rwX var
-
-USER www-data
-
+ENTRYPOINT ["dev-entrypoint"]
 CMD ["php-fpm"]
