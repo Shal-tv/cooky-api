@@ -23,11 +23,13 @@ COPY composer.json composer.lock ./
 
 ENV COMPOSER_MEMORY_LIMIT=-1
 
-RUN composer install \
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
     --no-interaction \
-    --optimize-autoloader \
-    --no-scripts
+    --optimize-autoloader
+
+RUN mkdir -p /var/www/.composer \
+    && chown -R www-data:www-data /var/www
 
 COPY . .
 
