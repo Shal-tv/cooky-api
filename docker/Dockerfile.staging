@@ -26,9 +26,10 @@ COPY composer.json composer.lock ./
 
 ENV COMPOSER_MEMORY_LIMIT=-1
 
-RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
+RUN composer install \
     --no-dev \
     --no-interaction \
+    --no-scripts \
     --optimize-autoloader
 
 COPY . .
