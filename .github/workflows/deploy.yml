@@ -14,60 +14,81 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v4
 
+            -   name: Determine environment
+                id: env
+                run: |
+                    if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+                      echo "ENV=prod" >> $GITHUB_OUTPUT
+                    else
+                      echo "ENV=staging" >> $GITHUB_OUTPUT
+                    fi
+
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
             -   name: Build API image
                 run: |
-                    docker build \
+                    docker buildx build --load \
                       -f docker/Dockerfile.staging \
                       -t cooky-api:latest .
 
             -   name: Build Nginx image
                 run: |
-                    docker build \
+                    docker buildx build --load \
                       -f docker/nginx/Dockerfile \
                       -t cooky-nginx:latest .
 
-            -   name: Export images
+            -   name: Save Docker images
                 run: |
-                    docker save cooky-api:latest -o cooky-api.tar
-                    docker save cooky-nginx:latest -o cooky-nginx.tar
+                    mkdir -p /tmp
+                    docker save cooky-api:latest -o /tmp/cooky-api.tar
+                    docker save cooky-nginx:latest -o /tmp/cooky-nginx.tar
 
-            -   name: Install SSH key
+            -   name: Deploy to VPS
+                env:
+                    SSH_HOST: ${{ secrets.SERVER_HOST }}
+                    SSH_USER: ${{ secrets.SERVER_USER }}
+                    SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
+                    SSH_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+                    SSH_PASSPHRASE: ${{ secrets.SERVER_SSH_PASSPHRASE }}
+                    ENVIRONMENT: ${{ steps.env.outputs.ENV }}
                 run: |
                     mkdir -p ~/.ssh
-                    echo "${{ secrets.SERVER_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                    echo "$SSH_KEY" > ~/.ssh/id_rsa
                     chmod 600 ~/.ssh/id_rsa
                     
-                    ssh-keyscan -p ${{ secrets.SERVER_SSH_PORT }} \
-                      ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-
-            -   name: Upload files
-                run: |
-                    scp -P ${{ secrets.SERVER_SSH_PORT }} \
-                      cooky-api.tar \
-                      cooky-nginx.tar \
+                    eval $(ssh-agent -s)
+                    ssh-add ~/.ssh/id_rsa
+                    
+                    ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+                    
+                    scp -P $SSH_PORT -o StrictHostKeyChecking=no \
+                      /tmp/cooky-api.tar \
+                      /tmp/cooky-nginx.tar \
                       docker/compose.staging.yml \
-                      ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
-
-            -   name: Deploy
-                run: |
-                    ssh -p ${{ secrets.SERVER_SSH_PORT }} \
-                      ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+                      $SSH_USER@$SSH_HOST:/tmp/
+                    
+                    ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST \
+                      ENVIRONMENT="$ENVIRONMENT" \
+                      bash -s << 'EOF'
                     
                     set -e
+                    
+                    CONTAINER_API="cooky-api-staging"
+                    CONTAINER_NGINX="cooky-nginx-staging"
                     
                     docker load -i /tmp/cooky-api.tar
                     docker load -i /tmp/cooky-nginx.tar
                     
                     docker compose -f /tmp/compose.staging.yml up -d --force-recreate
                     
-                    # attendre que PHP-FPM soit prêt
-                    sleep 3
+                    docker exec $CONTAINER_API php bin/console cache:clear --env=prod || true
+                    docker exec $CONTAINER_API php bin/console cache:warmup --env=prod || true
                     
-                    docker exec cooky-api-staging php bin/console cache:clear --env=prod || true
-                    docker exec cooky-api-staging php bin/console cache:warmup --env=prod || true
-                    
-                    docker image prune -f
-                    
-                    rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar
+                    rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/compose.staging.yml
                     
                     EOF
+
+            -   name: Cleanup
+                if: always()
+                run: rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar
