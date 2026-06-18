@@ -9,19 +9,19 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libicu-dev \
     libonig-dev \
-    librabbitmq-dev \
     && docker-php-ext-install \
         pdo_pgsql \
         zip \
         intl \
+        mbstring \
         opcache \
-    && pecl install apcu amqp \
-    && docker-php-ext-enable apcu amqp opcache \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
+
+ENV COMPOSER_MEMORY_LIMIT=-1
 
 RUN composer install \
     --no-dev \
