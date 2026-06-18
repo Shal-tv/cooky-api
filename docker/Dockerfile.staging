@@ -24,22 +24,15 @@ WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
 
-ENV COMPOSER_MEMORY_LIMIT=-1
-
-RUN composer install \
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
     --no-interaction \
-    --no-scripts \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --no-scripts
 
 COPY . .
 
-RUN composer dump-autoload \
-    --optimize \
-    --classmap-authoritative
-
-RUN mkdir -p var/cache var/log \
-    && chown -R www-data:www-data var
+RUN chown -R www-data:www-data /var/www/html
 
 USER www-data
 
