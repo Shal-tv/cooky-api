@@ -23,7 +23,7 @@ jobs:
             -   name: Build Nginx image
                 run: |
                     docker build \
-                      -f nginx/Dockerfile \
+                      -f docker/nginx/Dockerfile \
                       -t cooky-nginx:latest .
 
             -   name: Export images
