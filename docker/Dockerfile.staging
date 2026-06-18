@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libicu-dev \
     libonig-dev \
+    librabbitmq-dev \
+    && pecl install amqp \
+    && docker-php-ext-enable amqp \
     && docker-php-ext-install \
         pdo_pgsql \
         zip \
@@ -27,9 +30,6 @@ RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
     --no-interaction \
     --optimize-autoloader
-
-RUN mkdir -p /var/www/.composer \
-    && chown -R www-data:www-data /var/www
 
 COPY . .
 
