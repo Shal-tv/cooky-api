@@ -2,18 +2,8 @@
 set -e
 
 APP_DIR="${APP_DIR:-/var/www/dev/cooky-api}"
-DB_HOST="${DB_HOST:-db}"
-DB_PORT="${DB_PORT:-5432}"
 
 cd "$APP_DIR"
-
-echo "Waiting for PostgreSQL..."
-
-until nc -z "$DB_HOST" "$DB_PORT"; do
-  sleep 1
-done
-
-echo "PostgreSQL is ready."
 
 if [ ! -d vendor ] || [ ! -f vendor/autoload.php ]; then
   echo "Installing Composer dependencies..."

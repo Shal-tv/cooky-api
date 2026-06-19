@@ -5,10 +5,6 @@ services:
             dockerfile: Dockerfile
         container_name: cooky-api
         working_dir: /var/www/dev/cooky-api
-        environment:
-            APP_DIR: /var/www/dev/cooky-api
-            DB_HOST: db
-            DB_PORT: 5432
         volumes:
             - ../:/var/www/dev/cooky-api
             - vendor:/var/www/dev/cooky-api/vendor
