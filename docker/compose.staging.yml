@@ -1,6 +1,6 @@
 services:
     api:
-        image: ghcr.io/shal-tv/cooky-api:staging
+        image: cooky-api:latest
         container_name: cooky-api-staging
         restart: unless-stopped
         environment:
