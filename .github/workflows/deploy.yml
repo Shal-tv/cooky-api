@@ -18,9 +18,15 @@ jobs:
                 id: env
                 run: |
                     if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-                      echo "ENV=prod" >> $GITHUB_OUTPUT
+                      echo "ENV=prod" >> "$GITHUB_OUTPUT"
+                      echo "COMPOSE_FILE=compose.prod.yml" >> "$GITHUB_OUTPUT"
+                      echo "COMPOSE_PROJECT=cooky-prod" >> "$GITHUB_OUTPUT"
+                      echo "API_CONTAINER=cooky-api-prod" >> "$GITHUB_OUTPUT"
                     else
-                      echo "ENV=staging" >> $GITHUB_OUTPUT
+                      echo "ENV=staging" >> "$GITHUB_OUTPUT"
+                      echo "COMPOSE_FILE=compose.staging.yml" >> "$GITHUB_OUTPUT"
+                      echo "COMPOSE_PROJECT=cooky-staging" >> "$GITHUB_OUTPUT"
+                      echo "API_CONTAINER=cooky-api-staging" >> "$GITHUB_OUTPUT"
                     fi
 
             -   name: Set up Docker Buildx
@@ -30,19 +36,18 @@ jobs:
                 run: |
                     docker buildx build --load \
                       -f docker/Dockerfile.staging \
-                      -t cooky-api:latest .
+                      -t "cooky-api:${{ steps.env.outputs.ENV }}" .
 
             -   name: Build Nginx image
                 run: |
                     docker buildx build --load \
                       -f docker/nginx/Dockerfile \
-                      -t cooky-nginx:latest .
+                      -t "cooky-nginx:${{ steps.env.outputs.ENV }}" .
 
             -   name: Save Docker images
                 run: |
-                    mkdir -p /tmp
-                    docker save cooky-api:latest -o /tmp/cooky-api.tar
-                    docker save cooky-nginx:latest -o /tmp/cooky-nginx.tar
+                    docker save "cooky-api:${{ steps.env.outputs.ENV }}" -o /tmp/cooky-api.tar
+                    docker save "cooky-nginx:${{ steps.env.outputs.ENV }}" -o /tmp/cooky-nginx.tar
 
             -   name: Deploy to VPS
                 env:
@@ -52,40 +57,57 @@ jobs:
                     SSH_KEY: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
                     SSH_PASSPHRASE: ${{ secrets.SERVER_SSH_PASSPHRASE }}
                     ENVIRONMENT: ${{ steps.env.outputs.ENV }}
+                    COMPOSE_FILE: ${{ steps.env.outputs.COMPOSE_FILE }}
+                    COMPOSE_PROJECT: ${{ steps.env.outputs.COMPOSE_PROJECT }}
+                    API_CONTAINER: ${{ steps.env.outputs.API_CONTAINER }}
+                    # Full content of config/secrets/{env}/{env}.decrypt.private.php
+                    STAGING_DECRYPT_PRIVATE_KEY: ${{ secrets.STAGING_DECRYPT_PRIVATE_KEY }}
+                    PROD_DECRYPT_PRIVATE_KEY: ${{ secrets.PROD_DECRYPT_PRIVATE_KEY }}
                 run: |
                     mkdir -p ~/.ssh
                     echo "$SSH_KEY" > ~/.ssh/id_rsa
                     chmod 600 ~/.ssh/id_rsa
-                    
-                    eval $(ssh-agent -s)
+
+                    eval "$(ssh-agent -s)"
                     echo "$SSH_PASSPHRASE" | ssh-add ~/.ssh/id_rsa
-                    
-                    ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
-                    
-                    scp -P $SSH_PORT \
+
+                    ssh-keyscan -p "$SSH_PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+                    if [ "$ENVIRONMENT" = "prod" ]; then
+                      printf '%s\n' "$PROD_DECRYPT_PRIVATE_KEY" > /tmp/decrypt.private.php
+                    else
+                      printf '%s\n' "$STAGING_DECRYPT_PRIVATE_KEY" > /tmp/decrypt.private.php
+                    fi
+
+                    scp -P "$SSH_PORT" \
                       /tmp/cooky-api.tar \
                       /tmp/cooky-nginx.tar \
-                      docker/compose.staging.yml \
-                      $SSH_USER@$SSH_HOST:/tmp/
-                    
-                    ssh -p $SSH_PORT $SSH_USER@$SSH_HOST \
+                      /tmp/decrypt.private.php \
+                      "docker/${COMPOSE_FILE}" \
+                      "${SSH_USER}@${SSH_HOST}:/tmp/"
+
+                    ssh -p "$SSH_PORT" "${SSH_USER}@${SSH_HOST}" \
                       ENVIRONMENT="$ENVIRONMENT" \
+                      COMPOSE_FILE="$COMPOSE_FILE" \
+                      COMPOSE_PROJECT="$COMPOSE_PROJECT" \
+                      API_CONTAINER="$API_CONTAINER" \
                       bash -s << 'EOF'
-                    
                     set -e
-                    
+
                     docker load -i /tmp/cooky-api.tar
                     docker load -i /tmp/cooky-nginx.tar
-                    
-                    docker compose -f /tmp/compose.staging.yml up -d --force-recreate
-                    
-                    docker exec cooky-api-staging php bin/console cache:clear --env=prod || true
-                    docker exec cooky-api-staging php bin/console cache:warmup --env=prod || true
-                    
-                    rm -f /tmp/*.tar /tmp/compose.staging.yml
-                    
+
+                    docker compose -p "$COMPOSE_PROJECT" -f "/tmp/${COMPOSE_FILE}" up -d --force-recreate --remove-orphans
+
+                    docker cp "/tmp/decrypt.private.php" \
+                      "${API_CONTAINER}:/var/www/cooky-api/config/secrets/${ENVIRONMENT}/${ENVIRONMENT}.decrypt.private.php"
+
+                    docker exec "$API_CONTAINER" php bin/console cache:clear --env="$ENVIRONMENT" || true
+                    docker exec "$API_CONTAINER" php bin/console cache:warmup --env="$ENVIRONMENT" || true
+
+                    rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/decrypt.private.php "/tmp/${COMPOSE_FILE}"
                     EOF
 
             -   name: Cleanup
                 if: always()
-                run: rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar
+                run: rm -f /tmp/cooky-api.tar /tmp/cooky-nginx.tar /tmp/decrypt.private.php

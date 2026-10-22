@@ -1,24 +1,29 @@
+name: cooky-staging
+
 services:
     api:
-        image: cooky-api:latest
+        image: cooky-api:staging
         container_name: cooky-api-staging
         restart: unless-stopped
         environment:
             APP_ENV: staging
-            APP_DEBUG: 1
+            APP_DEBUG: "0"
+        extra_hosts:
+            # Reach Postgres / RabbitMQ installed on the VPS host
+            - "host.docker.internal:host-gateway"
         networks:
             - cooky_staging_network
         expose:
             - "9000"
 
     nginx:
-        image: nginx:alpine
+        image: cooky-nginx:staging
         container_name: cooky-nginx-staging
         restart: unless-stopped
         depends_on:
             - api
         ports:
-            - "8081:80"
+            - "127.0.0.1:8081:80"
         networks:
             - cooky_staging_network
 

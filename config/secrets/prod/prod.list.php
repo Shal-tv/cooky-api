@@ -16,4 +16,5 @@ return [
     'RMQ_PASSWORD_PROD' => null,
     'RMQ_PORT_PROD' => null,
     'RMQ_USER_PROD' => null,
+    'RMQ_VHOST_PROD' => null,
 ];

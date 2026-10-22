@@ -1,0 +1,32 @@
+name: cooky-prod
+
+services:
+    api:
+        image: cooky-api:prod
+        container_name: cooky-api-prod
+        restart: unless-stopped
+        environment:
+            APP_ENV: prod
+            APP_DEBUG: "0"
+        extra_hosts:
+            # Reach Postgres / RabbitMQ installed on the VPS host
+            - "host.docker.internal:host-gateway"
+        networks:
+            - cooky_prod_network
+        expose:
+            - "9000"
+
+    nginx:
+        image: cooky-nginx:prod
+        container_name: cooky-nginx-prod
+        restart: unless-stopped
+        depends_on:
+            - api
+        ports:
+            - "127.0.0.1:8080:80"
+        networks:
+            - cooky_prod_network
+
+networks:
+    cooky_prod_network:
+        driver: bridge

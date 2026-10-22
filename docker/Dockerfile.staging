@@ -7,18 +7,22 @@ RUN apt-get update && apt-get install -y \
  && docker-php-ext-install \
     pdo_pgsql zip intl opcache \
  && pecl install apcu amqp \
- && docker-php-ext-enable apcu amqp opcache
+ && docker-php-ext-enable apcu amqp opcache \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/staging/cooky-api
+WORKDIR /var/www/cooky-api
 
 COPY . .
 
 RUN composer install \
     --prefer-dist \
     --no-interaction \
-    --no-scripts
+    --no-scripts \
+    --no-dev \
+    --optimize-autoloader
 
 RUN mkdir -p var/cache var/log && \
     chown -R www-data:www-data var public

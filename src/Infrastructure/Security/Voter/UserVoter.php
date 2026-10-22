@@ -7,6 +7,7 @@ namespace App\Infrastructure\Security\Voter;
 use App\Infrastructure\Security\ApiUserAdapter;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Uid\Uuid;
 
@@ -28,14 +29,15 @@ final class UserVoter extends Voter
     protected function supports(string $attribute, mixed $subject): bool
     {
         return in_array($attribute, [
-                self::VIEW,
-                self::EDIT,
-                self::DELETE,
-            ])
+                    self::VIEW,
+                    self::EDIT,
+                    self::DELETE,
+                ]
+            )
             && $subject instanceof Uuid;
     }
 
-    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
         $user = $token->getUser();
 
@@ -43,7 +45,8 @@ final class UserVoter extends Voter
             return false;
         }
 
-        if ($this->accessDecisionManager->decide($token, ['ROLE_SUPER_ADMIN'])) {
+        if ($this->accessDecisionManager->decide($token, ['ROLE_SUPER_ADMIN']
+        )) {
             return true;
         }
 
@@ -52,7 +55,8 @@ final class UserVoter extends Voter
 
         return match ($attribute) {
             self::VIEW, self::EDIT, self::DELETE => $user->getApiUser()->getUuid() === $uuid->toString(),
-            default => throw new \LogicException('This code should not be reached!') // TODO: EXCEPTIONS
+            default => throw new \LogicException('This code should not be reached!'
+            ) // TODO: EXCEPTIONS
         };
     }
 }

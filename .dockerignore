@@ -1,0 +1,23 @@
+.git
+.gitignore
+.github
+.idea
+.vscode
+
+docker/compose.yml
+docker/compose.staging.yml
+docker/compose.prod.yml
+docker/php
+docker/postgres
+docker/nginx/reverse-proxy.conf
+docker/nginx/default.conf
+
+# Never bake decrypt keys into images (injected at runtime on the VPS)
+config/secrets/**/*.decrypt.private.php
+
+var/cache/*
+var/log/*
+tests
+phpunit*
+phpstan*
+README.md

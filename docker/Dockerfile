@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     && docker-php-ext-install \
     pdo_pgsql \
+    zip \
     intl \
     opcache \
     && pecl install apcu amqp \

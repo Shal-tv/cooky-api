@@ -54,6 +54,7 @@
 # Secrets
 /config/secrets/dev/dev.decrypt.private.php
 /config/secrets/prod/prod.decrypt.private.php
+/config/secrets/staging/staging.decrypt.private.php
 
 /.idea
 /config/reference.php

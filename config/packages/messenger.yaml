@@ -13,27 +13,27 @@ when@dev:
         messenger:
             transports:
                 async:
-                    dsn: amqp://%env(RMQ_USER_DEV)%:%env(RMQ_PASSWORD_DEV)%@%env(RMQ_HOST_DEV)%:%env(RMQ_PORT_DEV)%/%2f/cooky_dev
+                    dsn: 'amqp://%env(RMQ_USER_DEV)%:%env(urlencode:RMQ_PASSWORD_DEV)%@%env(RMQ_HOST_DEV)%:%env(RMQ_PORT_DEV)%/%env(urlencode:RMQ_VHOST_DEV)%/messages'
                     failure_transport: async_failed
 
-                async_failed: amqp://%env(RMQ_USER_DEV)%:%env(RMQ_PASSWORD_DEV)%@%env(RMQ_HOST_DEV)%:%env(RMQ_PORT_DEV)%/%2f/cooky_failed_dev
+                async_failed: 'amqp://%env(RMQ_USER_DEV)%:%env(urlencode:RMQ_PASSWORD_DEV)%@%env(RMQ_HOST_DEV)%:%env(RMQ_PORT_DEV)%/%env(urlencode:RMQ_VHOST_DEV)%/messages_failed'
 
 when@staging:
     framework:
         messenger:
             transports:
                 async:
-                    dsn: amqp://%env(RMQ_USER_STAGING)%:%env(RMQ_PASSWORD_STAGING)%@%env(RMQ_HOST_STAGING)%:%env(RMQ_PORT_STAGING)%/%2f/cooky_dev
+                    dsn: 'amqp://%env(RMQ_USER_STAGING)%:%env(urlencode:RMQ_PASSWORD_STAGING)%@%env(RMQ_HOST_STAGING)%:%env(RMQ_PORT_STAGING)%/%env(urlencode:RMQ_VHOST_STAGING)%/messages'
                     failure_transport: async_failed
 
-                async_failed: amqp://%env(RMQ_USER_STAGING)%:%env(RMQ_PASSWORD_STAGING)%@%env(RMQ_HOST_STAGING)%:%env(RMQ_PORT_STAGING)%/%2f/cooky_failed_dev
+                async_failed: 'amqp://%env(RMQ_USER_STAGING)%:%env(urlencode:RMQ_PASSWORD_STAGING)%@%env(RMQ_HOST_STAGING)%:%env(RMQ_PORT_STAGING)%/%env(urlencode:RMQ_VHOST_STAGING)%/messages_failed'
 
 when@prod:
     framework:
         messenger:
             transports:
                 async:
-                    dsn: amqp://%env(RMQ_USER_PROD)%:%env(RMQ_PASSWORD_PROD)%@%env(RMQ_HOST_PROD)%:%env(RMQ_PORT_PROD)%/%2f/cooky_dev
+                    dsn: 'amqp://%env(RMQ_USER_PROD)%:%env(urlencode:RMQ_PASSWORD_PROD)%@%env(RMQ_HOST_PROD)%:%env(RMQ_PORT_PROD)%/%env(urlencode:RMQ_VHOST_PROD)%/messages'
                     failure_transport: async_failed
 
-                async_failed: amqp://%env(RMQ_USER_PROD)%:%env(RMQ_PASSWORD_PROD)%@%env(RMQ_HOST_PROD)%:%env(RMQ_PORT_PROD)%/%2f/cooky_failed_dev
+                async_failed: 'amqp://%env(RMQ_USER_PROD)%:%env(urlencode:RMQ_PASSWORD_PROD)%@%env(RMQ_HOST_PROD)%:%env(RMQ_PORT_PROD)%/%env(urlencode:RMQ_VHOST_PROD)%/messages_failed'
