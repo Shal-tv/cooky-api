@@ -51,6 +51,9 @@
 # Embedded web-server pid file
 /.web-server-pid
 
+# JWT
+/config/jwt/private.pem
+
 # Secrets
 /config/secrets/dev/dev.decrypt.private.php
 /config/secrets/prod/prod.decrypt.private.php
@@ -66,3 +69,8 @@ phpstan.neon
 /config/packages/web_profiler.yaml
 /config/packages/twig.yaml
 /.env.local
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###

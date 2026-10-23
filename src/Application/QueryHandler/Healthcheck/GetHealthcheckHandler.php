@@ -1,13 +1,12 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Application\QueryHandler\Healthcheck;
 
 use App\Application\Query\Healthcheck\GetHealthcheck;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Throwable;
 
 #[AsMessageHandler]
 final readonly class GetHealthcheckHandler
@@ -22,7 +21,7 @@ final readonly class GetHealthcheckHandler
     public function __invoke(GetHealthcheck $getHealthcheck): array
     {
         return [
-            'readwriteConnection' => $this->checkDBConnection($this->em)
+            'readwriteConnection' => $this->checkDBConnection($this->em),
         ];
     }
 
@@ -33,10 +32,10 @@ final readonly class GetHealthcheckHandler
         }
 
         try {
-            $manager->getConnection()->connect();
+            $manager->getConnection()->executeQuery('SELECT 1');
 
             return $manager->getConnection()->isConnected();
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             return false;
         }
     }

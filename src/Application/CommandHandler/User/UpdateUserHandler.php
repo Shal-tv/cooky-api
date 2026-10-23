@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Application\CommandHandler\User;
 
@@ -16,7 +16,7 @@ final readonly class UpdateUserHandler
 {
     public function __construct(
         private ApiUserRepositoryInterface $apiUserRepository,
-        private UserPasswordHasherInterface $passwordHasher
+        private UserPasswordHasherInterface $passwordHasher,
     ) {
     }
 

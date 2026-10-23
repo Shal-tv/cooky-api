@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Infrastructure\Security\Voter;
 
@@ -29,12 +29,10 @@ final class UserVoter extends Voter
     protected function supports(string $attribute, mixed $subject): bool
     {
         return in_array($attribute, [
-                    self::VIEW,
-                    self::EDIT,
-                    self::DELETE,
-                ]
-            )
-            && $subject instanceof Uuid;
+            self::VIEW,
+            self::EDIT,
+            self::DELETE,
+        ]) && $subject instanceof Uuid;
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
@@ -45,8 +43,7 @@ final class UserVoter extends Voter
             return false;
         }
 
-        if ($this->accessDecisionManager->decide($token, ['ROLE_SUPER_ADMIN']
-        )) {
+        if ($this->accessDecisionManager->decide($token, ['ROLE_SUPER_ADMIN'])) {
             return true;
         }
 
@@ -55,8 +52,7 @@ final class UserVoter extends Voter
 
         return match ($attribute) {
             self::VIEW, self::EDIT, self::DELETE => $user->getApiUser()->getUuid() === $uuid->toString(),
-            default => throw new \LogicException('This code should not be reached!'
-            ) // TODO: EXCEPTIONS
+            default => throw new \LogicException('This code should not be reached!'), // TODO: EXCEPTIONS
         };
     }
 }

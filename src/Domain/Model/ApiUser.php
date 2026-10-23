@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Domain\Model;
 
@@ -66,7 +66,7 @@ class ApiUser extends AbstractEntity
     }
 
     /**
-     * @param list<string>  $roles
+     * @param list<string> $roles
      */
     public function setRoles(array $roles): self
     {

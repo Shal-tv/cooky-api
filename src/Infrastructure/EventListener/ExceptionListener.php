@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Infrastructure\EventListener;
 
@@ -22,27 +22,24 @@ final readonly class ExceptionListener
         $exception = $event->getThrowable();
 
         $this->logger->error($exception->getMessage(), [
-                'exception' => $exception,
-            ]
-        );
+            'exception' => $exception,
+        ]);
 
         $response = match (true) {
-            $exception instanceof HttpExceptionInterface => $this->buildResponse($exception->getMessage(), $exception->getStatusCode()
-            ),
-            default => $this->buildResponse('Ooops, something went wrong.', 500
-            )
+            $exception instanceof HttpExceptionInterface => $this->buildResponse($exception->getMessage(), $exception->getStatusCode()),
+            default => $this->buildResponse('Ooops, something went wrong.', 500),
         };
 
-        $event->setResponse($response
-        );
+        $event->setResponse($response);
     }
 
     private function buildResponse(string $message, int $statusCode): JsonResponse
     {
-        return new JsonResponse([
-            'code' => $statusCode,
-            'message' => $message
-        ], $statusCode
-        );
+        return new JsonResponse(
+            [
+                'code' => $statusCode,
+                'message' => $message,
+            ],
+            $statusCode);
     }
 }

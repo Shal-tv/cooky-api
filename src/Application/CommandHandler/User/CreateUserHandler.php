@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Application\CommandHandler\User;
 
@@ -18,7 +18,7 @@ final readonly class CreateUserHandler
     public function __construct(
         private UuidFactory $uuidFactory,
         private ApiUserRepositoryInterface $apiUserRepository,
-        private UserPasswordHasherInterface $passwordHasher
+        private UserPasswordHasherInterface $passwordHasher,
     ) {
     }
 

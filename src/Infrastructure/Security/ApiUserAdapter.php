@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Infrastructure\Security;
 
@@ -35,6 +35,7 @@ final readonly class ApiUserAdapter implements UserInterface, PasswordAuthentica
 
     /**
      * @return list<string>
+     *
      * @see UserInterface
      */
     public function getRoles(): array

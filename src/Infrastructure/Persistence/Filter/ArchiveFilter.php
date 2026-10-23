@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Filter;
 
@@ -11,6 +11,6 @@ final class ArchiveFilter extends SQLFilter
 {
     public function addFilterConstraint(ClassMetadata $targetEntity, string $targetTableAlias): string
     {
-        return $targetTableAlias . '.archive = false';
+        return $targetTableAlias.'.archive = false';
     }
 }

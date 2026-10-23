@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Application\Command\User;
 
@@ -25,21 +25,21 @@ final class UpdateUser implements CommandInterface
 
     #[Constraints\Type([
         'string',
-        'null'
+        'null',
     ])]
     #[Constraints\Length(min: 6)]
     private ?string $username;
 
     #[Constraints\Type([
         'string',
-        'null'
+        'null',
     ])]
     #[Constraints\Email]
     private ?string $email;
 
     #[Constraints\Type([
         'string',
-        'null'
+        'null',
     ])]
     #[Constraints\PasswordStrength]
     private ?string $password;

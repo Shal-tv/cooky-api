@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Repository;
 
@@ -12,7 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * @extends ServiceEntityRepository<ApiUser>
  *
- * @method ApiUser|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
+ * @method ApiUser|null  findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  * @method list<ApiUser> findAll()
  * @method list<ApiUser> findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, int|null $limit = null, int|null $offset = null)
  */

@@ -1,3 +1,5 @@
-<?php // staging.encrypt.public on Thu, 22 Oct 2026 12:43:44 +0000
+<?php
+
+// staging.encrypt.public on Thu, 22 Oct 2026 12:43:44 +0000
 
 return "\x2C\xDF\x2C\x29\xA2\xDBFGm\x91\x84\xB5\x84\xBB\xDB\x09_\xAE\xA3CX\xDA\x7F\xF5B\x5D\xB7\x87F9C8";
