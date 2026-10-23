@@ -94,6 +94,11 @@ jobs:
                       bash -s << 'EOF'
                     set -e
 
+                    docker compose -p "$COMPOSE_PROJECT" -f "/tmp/${COMPOSE_FILE}" down --remove-orphans || true
+
+                    docker image rm "cooky-api:${ENVIRONMENT}" || true
+                    docker image rm "cooky-nginx:${ENVIRONMENT}" || true
+
                     docker load -i /tmp/cooky-api.tar
                     docker load -i /tmp/cooky-nginx.tar
 
